@@ -115,7 +115,7 @@ export default function Projects() {
       ${
         darkMode
           ? "bg-gradient-to-b from-gray-900 to-gray-800 text-white"
-          : "bg-gradient-to-b from-white to-gray-100 text-gray-900"
+          : "bg-gradient-to-b from-gray-50 to-gray-100 text-gray-900"
       }`}
     >
       {/* Botón de Dark Mode */}
