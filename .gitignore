@@ -32,7 +32,7 @@ yarn-error.log*
 # Archivos de entorno (puedes optar por incluir un .env.example si lo deseas)
 /.env*
 
-# Configuración de Vercel
+# Configuración de Vercel_
 .vercel
 
 # TypeScript
