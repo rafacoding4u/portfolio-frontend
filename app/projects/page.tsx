@@ -58,31 +58,11 @@ export default function Projects() {
 
   // Lista de tecnologías más usadas
   const allTechs = [
-    "JavaScript",
-    "TypeScript",
-    "React",
-    "Next.js",
-    "Vue.js",
-    "Angular",
-    "PHP",
-    "Laravel",
-    "Node.js",
-    "Express.js",
-    "Python",
-    "Django",
-    "Flask",
-    "Ruby on Rails",
-    "Spring Boot",
-    "C#",
-    "ASP.NET",
-    "Go",
-    "Rust",
-    "Swift",
-    "Kotlin",
-    "Flutter",
-    "React Native",
-    "Tailwind CSS",
-    "Bootstrap",
+    "JavaScript", "TypeScript", "React", "Next.js", "Vue.js", "Angular",
+    "PHP", "Laravel", "Node.js", "Express.js", "Python", "Django",
+    "Flask", "Ruby on Rails", "Spring Boot", "C#", "ASP.NET", "Go",
+    "Rust", "Swift", "Kotlin", "Flutter", "React Native",
+    "Tailwind CSS", "Bootstrap",
   ];
 
   // Filtrar tecnologías según búsqueda
@@ -112,11 +92,8 @@ export default function Projects() {
   return (
     <div
       className={`min-h-screen flex flex-col items-center py-10 px-6 md:px-12 transition-all duration-500 font-elegant 
-      ${
-        darkMode
-          ? "bg-gradient-to-b from-gray-900 to-gray-800 text-white"
-          : "bg-gradient-to-b from-gray-50 to-gray-100 text-gray-900"
-      }`}
+      ${darkMode ? "bg-gray-900 text-white" : "bg-white text-gray-900"}
+      `}
     >
       {/* Botón de Dark Mode */}
       <button
@@ -206,7 +183,7 @@ export default function Projects() {
         className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 w-full max-w-7xl mt-8"
         initial="hidden"
         animate="visible"
-        variants={{ visible: { transition: { staggerChildren: 0.2 } } }}
+        variants={{ visible: { staggerChildren: 0.2 } }}
       >
         {filteredProjects.map((project) => (
           <motion.div
@@ -217,9 +194,14 @@ export default function Projects() {
           >
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white">{project.title}</h2>
             <p className="text-gray-700 dark:text-gray-300">{project.description}</p>
-            <p className="text-gray-600 dark:text-gray-400 text-sm">
-              <strong>Tecnologías:</strong> {project.tech_stack}
-            </p>
+            <div className="mt-4 flex gap-3">
+              <a href={project.github_link} target="_blank" rel="noopener noreferrer" className="px-4 py-2 bg-blue-600 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 flex items-center gap-2">
+                <CodeBracketIcon className="h-5 w-5" /> Ver Código
+              </a>
+              <a href={project.live_demo} target="_blank" rel="noopener noreferrer" className="px-4 py-2 bg-green-600 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 flex items-center gap-2">
+                <PlayIcon className="h-5 w-5" /> Ver Demo
+              </a>
+            </div>
           </motion.div>
         ))}
       </motion.div>
