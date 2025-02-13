@@ -42,6 +42,8 @@ export default function AddProject({ onProjectAdded }: { onProjectAdded: () => v
       // Actualizar lista de proyectos
       onProjectAdded();
     } catch (error) {
+      // Corregido: Se usa el error para evitar ESLint warning
+      console.error("Error al agregar el proyecto:", error);
       setError("Error al agregar el proyecto.");
     } finally {
       setLoading(false);
@@ -106,3 +108,4 @@ export default function AddProject({ onProjectAdded }: { onProjectAdded: () => v
     </motion.form>
   );
 }
+

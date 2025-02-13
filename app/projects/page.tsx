@@ -75,10 +75,10 @@ export default function Projects() {
     selectedFilters.length === 0
       ? projects
       : projects.filter((project) =>
-          selectedFilters.some((filter) =>
-            project.tech_stack.toLowerCase().includes(filter.toLowerCase())
-          )
-        );
+        selectedFilters.some((filter) =>
+          project.tech_stack.toLowerCase().includes(filter.toLowerCase())
+        )
+      );
 
   // Manejo de selección de filtros
   const toggleFilter = (tech: string) => {
@@ -159,11 +159,10 @@ export default function Projects() {
                   <div
                     key={tech}
                     className={`flex justify-between items-center px-4 py-2 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-all duration-200 
-                    ${
-                      selectedFilters.includes(tech)
+                    ${selectedFilters.includes(tech)
                         ? "bg-blue-500 text-white"
                         : "text-gray-900 dark:text-gray-100"
-                    }`}
+                      }`}
                     onClick={() => toggleFilter(tech)}
                   >
                     {tech}
@@ -183,8 +182,9 @@ export default function Projects() {
         className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 w-full max-w-7xl mt-8"
         initial="hidden"
         animate="visible"
-        variants={{ visible: { staggerChildren: 0.2 } }}
+        transition={{ staggerChildren: 0.2 }}
       >
+
         {filteredProjects.map((project) => (
           <motion.div
             key={project.id}
