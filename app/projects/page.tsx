@@ -117,19 +117,22 @@ export default function Projects() {
         🚀 Mis Proyectos
       </motion.h1>
 
-      {/* Mostrar formulario solo si está autenticado */}
-      {isAuthenticated && (
-        <button
-          className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg shadow-md hover:shadow-lg transition-all duration-300"
-          onClick={() => setShowForm(!showForm)}
-        >
-          <PlusIcon className="h-5 w-5" />{" "}
-          {showForm ? "Ocultar Formulario" : "Añadir Proyecto"}
-        </button>
+      {/* Mostrar formulario solo si eres tú */}
+      {isAuthenticated && localStorage.getItem("userEmail") === "rafacoding4u@gmail.com" && (
+        <>
+          <button
+            className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg shadow-md hover:shadow-lg transition-all duration-300"
+            onClick={() => setShowForm(!showForm)}
+          >
+            <PlusIcon className="h-5 w-5" />{" "}
+            {showForm ? "Ocultar Formulario" : "Añadir Proyecto"}
+          </button>
+
+          {/* Formulario Replegable */}
+          {showForm && <AddProject onProjectAdded={fetchProjects} />}
+        </>
       )}
 
-      {/* Formulario Replegable */}
-      {isAuthenticated && showForm && <AddProject onProjectAdded={fetchProjects} />}
 
       {/* Menú de filtros */}
       <div className="mt-6 relative">
