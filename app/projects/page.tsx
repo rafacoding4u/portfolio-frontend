@@ -51,6 +51,67 @@ export default function Projects() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  // Estados para Modal y Contraseña
+  const [password, setPassword] = useState("");
+  const [modalOpen, setModalOpen] = useState(false);
+  const [actionType, setActionType] = useState<"update" | "delete" | null>(null);
+  const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null);
+
+  // Función para abrir el Modal
+  const handleOpenModal = (id: number, type: "update" | "delete") => {
+    setSelectedProjectId(id);
+    setActionType(type);
+    setPassword("");
+    setModalOpen(true);
+  };
+
+  // Confirmar la acción (Actualizar o Eliminar)
+  const handleConfirmAction = async () => {
+    if (actionType === "update") {
+      await handleUpdate(selectedProjectId, password);
+    } else if (actionType === "delete") {
+      await handleDelete(selectedProjectId, password);
+    }
+    setModalOpen(false);
+  };
+
+  // ✅ Corregido: Función para actualizar proyecto
+  const handleUpdate = async (id: number | null, password: string) => {
+    try {
+      await axios.put(`http://127.0.0.1:8000/api/projects/${id}`, {
+        password,
+        title: "Proyecto Actualizado",
+        description: "Nueva descripción actualizada"
+      });
+      alert("✅ Proyecto actualizado correctamente");
+      fetchProjects();
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        alert(`❌ Error al actualizar: ${error.response?.data?.message || error.message}`);
+      } else {
+        alert("❌ Error inesperado al actualizar el proyecto.");
+      }
+    }
+  };
+
+  // ✅ Corregido: Función para eliminar proyecto
+  const handleDelete = async (id: number | null, password: string) => {
+    try {
+      await axios.delete(`http://127.0.0.1:8000/api/projects/${id}`, {
+        data: { password }
+      });
+      alert("✅ Proyecto eliminado correctamente");
+      fetchProjects();
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        alert(`❌ Error al eliminar: ${error.response?.data?.message || error.message}`);
+      } else {
+        alert("❌ Error inesperado al eliminar el proyecto.");
+      }
+    }
+  };
+
+
 
   useEffect(() => {
     const token = localStorage.getItem("authToken");
@@ -118,7 +179,7 @@ export default function Projects() {
     );
   };
 
-  
+
 
   return (
     <div
@@ -232,79 +293,133 @@ export default function Projects() {
         transition={{ staggerChildren: 0.2 }}
       >
 
-{filteredProjects.map((project) => (
-  <motion.div
-    key={project.id}
-    className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-xl border border-gray-300 transition-all duration-300 hover:shadow-2xl"
-    variants={fadeInUp}
-    {...scaleHover}
-  >
-    {/* Imagen */}
-    {project.image_url && (
-      <Image
-        src={project.image_url ?? ""}
-        alt={project.title ?? "Imagen de proyecto"}
-        width={300}
-        height={160}
-        className="w-full h-40 object-cover rounded-md mb-4"
-        unoptimized
-      />
-    )}
+        {filteredProjects.map((project) => (
+          <motion.div
+            key={project.id}
+            className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-xl border border-gray-300 transition-all duration-300 hover:shadow-2xl"
+            variants={fadeInUp}
+            {...scaleHover}
+          >
+            {/* Solo visible si eres tú */}
+            {userEmail?.trim().toLowerCase() === "rafacoding4u@gmail.com" && (
+              <div className="mt-4 flex gap-3">
+                {/* Botón Editar */}
+                <button
+                  onClick={() => handleOpenModal(project.id, "update")}
+                  className="px-3 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600 transition"
+                >
+                  📝 Editar
+                </button>
 
-    {/* Detalles del Proyecto */}
-    <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
-      {project.title}
-    </h2>
-    <p className="text-gray-600 dark:text-gray-300 mb-3">
-      {project.description}
-    </p>
-
-    {/* Información Adicional */}
-    <div className="text-sm text-gray-500 mb-3">
-      Cliente: {project.client_name ?? 'N/A'} | Tipo: {project.project_type ?? 'N/A'} | Duración: {project.duration ?? 'N/A'}
-    </div>
-
-    {/* Etiquetas */}
-<div className="flex flex-wrap gap-2 mb-3">
-  {/* Etiquetas */}
-<div className="flex flex-wrap gap-2 mb-3">
-  {Array.isArray(project.tags) 
-    ? project.tags.map((tag: string, index: number) => (
-        <span key={index} className="bg-blue-100 text-blue-600 text-xs font-semibold px-2 py-1 rounded-full">
-          #{tag}
-        </span>
-      ))
-    : JSON.parse(project.tags || "[]").map((tag: string, index: number) => (
-        <span key={index} className="bg-blue-100 text-blue-600 text-xs font-semibold px-2 py-1 rounded-full">
-          #{tag}
-        </span>
-      ))
-  }
-</div>
-
-</div>
+                {/* Botón Eliminar */}
+                <button
+                  onClick={() => handleOpenModal(project.id, "delete")}
+                  className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition"
+                >
+                  🗑️ Eliminar
+                </button>
+              </div>
+            )}
 
 
-    {/* Fechas */}
-    <div className="text-xs text-gray-500 mb-3">
-      Creado: {project.created_at ? new Date(project.created_at).toLocaleDateString() : 'N/A'} |
-      Actualizado: {project.updated_at ? new Date(project.updated_at).toLocaleDateString() : 'N/A'}
-    </div>
+            {/* Imagen */}
+            {project.image_url && (
+              <Image
+                src={project.image_url ?? ""}
+                alt={project.title ?? "Imagen de proyecto"}
+                width={300}
+                height={160}
+                className="w-full h-40 object-cover rounded-md mb-4"
+                unoptimized
+              />
+            )}
 
-    {/* Enlaces */}
-    <div className="mt-4 flex gap-3">
-      <a href={project.github_link} target="_blank" rel="noopener noreferrer" className="px-4 py-2 bg-blue-600 text-white rounded-lg shadow-md hover:shadow-lg flex items-center gap-2">
-        <CodeBracketIcon className="h-5 w-5" /> Ver Código
-      </a>
-      <a href={project.live_demo} target="_blank" rel="noopener noreferrer" className="px-4 py-2 bg-green-600 text-white rounded-lg shadow-md hover:shadow-lg flex items-center gap-2">
-        <PlayIcon className="h-5 w-5" /> Ver Demo
-      </a>
-    </div>
-  </motion.div>
-))}
+            {/* Detalles del Proyecto */}
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+              {project.title}
+            </h2>
+            <p className="text-gray-600 dark:text-gray-300 mb-3">
+              {project.description}
+            </p>
+
+            {/* Información Adicional */}
+            <div className="text-sm text-gray-500 mb-3">
+              Cliente: {project.client_name ?? 'N/A'} | Tipo: {project.project_type ?? 'N/A'} | Duración: {project.duration ?? 'N/A'}
+            </div>
+
+            {/* Etiquetas */}
+            <div className="flex flex-wrap gap-2 mb-3">
+              {/* Etiquetas */}
+              <div className="flex flex-wrap gap-2 mb-3">
+                {Array.isArray(project.tags)
+                  ? project.tags.map((tag: string, index: number) => (
+                    <span key={index} className="bg-blue-100 text-blue-600 text-xs font-semibold px-2 py-1 rounded-full">
+                      #{tag}
+                    </span>
+                  ))
+                  : JSON.parse(project.tags || "[]").map((tag: string, index: number) => (
+                    <span key={index} className="bg-blue-100 text-blue-600 text-xs font-semibold px-2 py-1 rounded-full">
+                      #{tag}
+                    </span>
+                  ))
+                }
+              </div>
+
+            </div>
 
 
+            {/* Fechas */}
+            <div className="text-xs text-gray-500 mb-3">
+              Creado: {project.created_at ? new Date(project.created_at).toLocaleDateString() : 'N/A'} |
+              Actualizado: {project.updated_at ? new Date(project.updated_at).toLocaleDateString() : 'N/A'}
+            </div>
 
+            {/* Enlaces */}
+            <div className="mt-4 flex gap-3">
+              <a href={project.github_link} target="_blank" rel="noopener noreferrer" className="px-4 py-2 bg-blue-600 text-white rounded-lg shadow-md hover:shadow-lg flex items-center gap-2">
+                <CodeBracketIcon className="h-5 w-5" /> Ver Código
+              </a>
+              <a href={project.live_demo} target="_blank" rel="noopener noreferrer" className="px-4 py-2 bg-green-600 text-white rounded-lg shadow-md hover:shadow-lg flex items-center gap-2">
+                <PlayIcon className="h-5 w-5" /> Ver Demo
+              </a>
+            </div>
+          </motion.div>
+        ))}
+
+
+        {/* Modal para Solicitar Contraseña */}
+        {modalOpen && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg w-96 shadow-xl">
+              <h2 className="text-lg font-bold mb-4 text-gray-800 dark:text-white">
+                Introduce la contraseña para {actionType === "update" ? "actualizar" : "eliminar"}:
+              </h2>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Contraseña"
+                className="w-full p-2 mb-4 border rounded-md dark:bg-gray-700 dark:text-white"
+              />
+              <div className="flex justify-end gap-3">
+                <button
+                  onClick={() => setModalOpen(false)}
+                  className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleConfirmAction}
+                  className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                >
+                  Confirmar
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Cierre de contenedor principal */}
       </motion.div>
     </div>
   );
