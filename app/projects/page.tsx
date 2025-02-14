@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import axios from "axios";
+import Image from "next/image";
 import { motion } from "framer-motion";
 import {
   MoonIcon,
@@ -30,7 +31,15 @@ interface Project {
   tech_stack: string;
   github_link: string;
   live_demo: string;
+  image_url?: string;
+  tags?: string[];
+  created_at?: string;
+  updated_at?: string;
+  client_name?: string;      // 🆕 Cliente
+  project_type?: string;     // 🆕 Tipo de proyecto
+  duration?: string;         // 🆕 Duración
 }
+
 
 export default function Projects() {
   // Nuevo estado para guardar tu email
@@ -70,6 +79,7 @@ export default function Projects() {
     try {
       const response = await axios.get("http://127.0.0.1:8000/api/projects");
       setProjects(response.data);
+      console.log("📊 Datos de proyectos recibidos:", response.data);
     } catch (error) {
       console.error("Error al obtener los proyectos:", error);
     }
@@ -107,6 +117,8 @@ export default function Projects() {
         : [...prevFilters, tech]
     );
   };
+
+  
 
   return (
     <div
@@ -220,25 +232,79 @@ export default function Projects() {
         transition={{ staggerChildren: 0.2 }}
       >
 
-        {filteredProjects.map((project) => (
-          <motion.div
-            key={project.id}
-            className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-xl border border-gray-300 transition-all duration-300 hover:shadow-2xl"
-            variants={fadeInUp}
-            {...scaleHover}
-          >
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">{project.title}</h2>
-            <p className="text-gray-700 dark:text-gray-300">{project.description}</p>
-            <div className="mt-4 flex gap-3">
-              <a href={project.github_link} target="_blank" rel="noopener noreferrer" className="px-4 py-2 bg-blue-600 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 flex items-center gap-2">
-                <CodeBracketIcon className="h-5 w-5" /> Ver Código
-              </a>
-              <a href={project.live_demo} target="_blank" rel="noopener noreferrer" className="px-4 py-2 bg-green-600 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 flex items-center gap-2">
-                <PlayIcon className="h-5 w-5" /> Ver Demo
-              </a>
-            </div>
-          </motion.div>
-        ))}
+{filteredProjects.map((project) => (
+  <motion.div
+    key={project.id}
+    className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-xl border border-gray-300 transition-all duration-300 hover:shadow-2xl"
+    variants={fadeInUp}
+    {...scaleHover}
+  >
+    {/* Imagen */}
+    {project.image_url && (
+      <Image
+        src={project.image_url ?? ""}
+        alt={project.title ?? "Imagen de proyecto"}
+        width={300}
+        height={160}
+        className="w-full h-40 object-cover rounded-md mb-4"
+        unoptimized
+      />
+    )}
+
+    {/* Detalles del Proyecto */}
+    <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+      {project.title}
+    </h2>
+    <p className="text-gray-600 dark:text-gray-300 mb-3">
+      {project.description}
+    </p>
+
+    {/* Información Adicional */}
+    <div className="text-sm text-gray-500 mb-3">
+      Cliente: {project.client_name ?? 'N/A'} | Tipo: {project.project_type ?? 'N/A'} | Duración: {project.duration ?? 'N/A'}
+    </div>
+
+    {/* Etiquetas */}
+<div className="flex flex-wrap gap-2 mb-3">
+  {/* Etiquetas */}
+<div className="flex flex-wrap gap-2 mb-3">
+  {Array.isArray(project.tags) 
+    ? project.tags.map((tag: string, index: number) => (
+        <span key={index} className="bg-blue-100 text-blue-600 text-xs font-semibold px-2 py-1 rounded-full">
+          #{tag}
+        </span>
+      ))
+    : JSON.parse(project.tags || "[]").map((tag: string, index: number) => (
+        <span key={index} className="bg-blue-100 text-blue-600 text-xs font-semibold px-2 py-1 rounded-full">
+          #{tag}
+        </span>
+      ))
+  }
+</div>
+
+</div>
+
+
+    {/* Fechas */}
+    <div className="text-xs text-gray-500 mb-3">
+      Creado: {project.created_at ? new Date(project.created_at).toLocaleDateString() : 'N/A'} |
+      Actualizado: {project.updated_at ? new Date(project.updated_at).toLocaleDateString() : 'N/A'}
+    </div>
+
+    {/* Enlaces */}
+    <div className="mt-4 flex gap-3">
+      <a href={project.github_link} target="_blank" rel="noopener noreferrer" className="px-4 py-2 bg-blue-600 text-white rounded-lg shadow-md hover:shadow-lg flex items-center gap-2">
+        <CodeBracketIcon className="h-5 w-5" /> Ver Código
+      </a>
+      <a href={project.live_demo} target="_blank" rel="noopener noreferrer" className="px-4 py-2 bg-green-600 text-white rounded-lg shadow-md hover:shadow-lg flex items-center gap-2">
+        <PlayIcon className="h-5 w-5" /> Ver Demo
+      </a>
+    </div>
+  </motion.div>
+))}
+
+
+
       </motion.div>
     </div>
   );
