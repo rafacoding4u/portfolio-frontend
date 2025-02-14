@@ -11,7 +11,7 @@ import {
   ChevronDownIcon,
   XMarkIcon,
 } from "@heroicons/react/24/solid";
-import AddProject from "./AddProject";
+import AddProject from "@/app/projects/AddProject";
 
 // Animaciones
 const fadeInUp = {
@@ -33,6 +33,8 @@ interface Project {
 }
 
 export default function Projects() {
+  // Nuevo estado para guardar tu email
+  const [userEmail, setUserEmail] = useState<string | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
   const [darkMode, setDarkMode] = useState(false);
   const [showForm, setShowForm] = useState(false);
@@ -42,10 +44,27 @@ export default function Projects() {
   const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
-    fetchProjects();
     const token = localStorage.getItem("authToken");
     setIsAuthenticated(!!token);
-  }, []);
+    console.log("✅ authToken LocalStorage:", token);
+
+    const email = localStorage.getItem("userEmail");
+    setUserEmail(email);
+
+    // ✅ Verificación de estados directamente en la consola:
+    console.log("✅ isAuthenticated:", isAuthenticated);
+    console.log("✅ userEmail:", userEmail);
+    console.log("✅ userEmail Trimmed:", userEmail?.trim().toLowerCase());
+    console.log(
+      "✅ Comparación con 'rafacoding4u@gmail.com':",
+      userEmail?.trim().toLowerCase() === "rafacoding4u@gmail.com"
+    );
+
+    fetchProjects();
+  }, [isAuthenticated, userEmail]);
+
+
+
 
   const fetchProjects = async () => {
     try {
@@ -117,8 +136,21 @@ export default function Projects() {
         🚀 Mis Proyectos
       </motion.h1>
 
+      {/* Verificar estados directamente */}
+      {(() => {
+        console.log("✅ isAuthenticated:", isAuthenticated);
+        console.log("✅ userEmail:", userEmail);
+        console.log("✅ userEmail Trimmed:", userEmail?.trim().toLowerCase());
+        console.log(
+          "✅ Comparación con 'rafacoding4u@gmail.com':",
+          userEmail?.trim().toLowerCase() === "rafacoding4u@gmail.com"
+        );
+        return null; // Devuelve null para evitar errores en React
+      })()}
+
+
       {/* Mostrar formulario solo si eres tú */}
-      {isAuthenticated && localStorage.getItem("userEmail") === "rafacoding4u@gmail.com" && (
+      {isAuthenticated && userEmail?.trim().toLowerCase() === "rafacoding4u@gmail.com" && (
         <>
           <button
             className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg shadow-md hover:shadow-lg transition-all duration-300"
@@ -128,10 +160,10 @@ export default function Projects() {
             {showForm ? "Ocultar Formulario" : "Añadir Proyecto"}
           </button>
 
-          {/* Formulario Replegable */}
           {showForm && <AddProject onProjectAdded={fetchProjects} />}
         </>
       )}
+
 
 
       {/* Menú de filtros */}
