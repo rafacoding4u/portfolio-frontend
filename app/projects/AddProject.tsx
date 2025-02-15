@@ -8,58 +8,89 @@ interface AddProjectProps {
 }
 
 export default function AddProject({ onProjectAdded }: AddProjectProps) {
-  // Estados para los campos del formulario
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [techStack, setTechStack] = useState("");
   const [githubLink, setGithubLink] = useState("");
   const [liveDemo, setLiveDemo] = useState("");
+  const [clientName, setClientName] = useState("");
+  const [projectType, setProjectType] = useState("");
+  const [duration, setDuration] = useState("");
+  const [featured, setFeatured] = useState(false);
+  const [tags, setTags] = useState<string[]>([]);
+  const [imageUrl, setImageUrl] = useState("");
+  const [imageFile, setImageFile] = useState<File | null>(null);
 
-  // Estados para la carga y errores
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
-  // Validaciones simples antes de enviar
-  const validateFields = () => {
-    const errors: Record<string, string> = {};
-    if (!title.trim()) errors.title = "El título es obligatorio.";
-    if (!description.trim()) errors.description = "La descripción es obligatoria.";
-    if (!techStack.trim()) errors.techStack = "Las tecnologías utilizadas son obligatorias.";
-    return errors;
+  const handleTagInput = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" && e.currentTarget.value.trim()) {
+      e.preventDefault();
+      setTags([...tags, e.currentTarget.value.trim()]);
+      e.currentTarget.value = "";
+    }
   };
 
-  // Manejo del envío del formulario
+  const removeTag = (tagToRemove: string) => {
+    setTags(tags.filter((tag) => tag !== tagToRemove));
+  };
+
+  const handleImageUpload = async () => {
+    if (!imageFile) return;
+
+    const formData = new FormData();
+    formData.append("image", imageFile);
+
+    try {
+      const response = await axios.post("http://127.0.0.1:8000/api/upload", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
+      setImageUrl(response.data.imageUrl);
+    } catch (error) {
+      console.error("Error al subir la imagen:", error);
+      setError("Error al subir la imagen. Inténtalo de nuevo.");
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError("");
-    setFieldErrors({});
-
-    const errors = validateFields();
-    if (Object.keys(errors).length > 0) {
-      setFieldErrors(errors);
-      setLoading(false);
-      return;
-    }
 
     try {
+      if (imageFile) {
+        await handleImageUpload();
+      }
+
       await axios.post("http://127.0.0.1:8000/api/projects", {
         title,
         description,
         tech_stack: techStack,
         github_link: githubLink || null,
         live_demo: liveDemo || null,
+        client_name: clientName || null,
+        project_type: projectType || null,
+        duration: duration || null,
+        featured,
+        tags,
+        image_url: imageUrl || null,
       });
 
-      // Limpia el formulario tras el éxito
       setTitle("");
       setDescription("");
       setTechStack("");
       setGithubLink("");
       setLiveDemo("");
+      setClientName("");
+      setProjectType("");
+      setDuration("");
+      setFeatured(false);
+      setTags([]);
+      setImageUrl("");
+      setImageFile(null);
 
-      // Notifica al componente principal para actualizar la lista
       onProjectAdded();
     } catch (error) {
       console.error("Error al agregar el proyecto:", error);
@@ -84,79 +115,95 @@ export default function AddProject({ onProjectAdded }: AddProjectProps) {
         ➕ Añadir Proyecto
       </h2>
 
-      {/* Mensaje de error global */}
       {error && <p className="text-red-500 text-sm mb-3">{error}</p>}
 
-      {/* Campos del formulario */}
       <div className="grid grid-cols-1 gap-4">
-        {/* Título */}
-        <div>
+        <label>
+          <span className="text-gray-700 dark:text-white">Título *</span>
           <input
             type="text"
-            placeholder="Título del proyecto *"
-            className="input-field w-full p-2 border rounded-md dark:bg-gray-700 dark:text-white"
+            placeholder="Ej: Portfolio Web"
+            className="w-full p-2 border rounded-md dark:bg-gray-700 dark:text-white"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             required
           />
-          {fieldErrors.title && (
-            <p className="text-red-500 text-xs mt-1">{fieldErrors.title}</p>
-          )}
-        </div>
+        </label>
 
-        {/* Descripción */}
-        <div>
+        <label>
+          <span className="text-gray-700 dark:text-white">Descripción *</span>
           <textarea
-            placeholder="Descripción del proyecto *"
-            className="input-field w-full p-2 border rounded-md dark:bg-gray-700 dark:text-white"
+            placeholder="Describe tu proyecto"
+            className="w-full p-2 border rounded-md dark:bg-gray-700 dark:text-white"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             required
           />
-          {fieldErrors.description && (
-            <p className="text-red-500 text-xs mt-1">{fieldErrors.description}</p>
-          )}
-        </div>
+        </label>
 
-        {/* Tecnologías */}
-        <div>
+        <label>
+          <span className="text-gray-700 dark:text-white">Tecnologías *</span>
           <input
             type="text"
-            placeholder="Tecnologías utilizadas *"
-            className="input-field w-full p-2 border rounded-md dark:bg-gray-700 dark:text-white"
+            placeholder="Ej: React, Laravel, Tailwind"
+            className="w-full p-2 border rounded-md dark:bg-gray-700 dark:text-white"
             value={techStack}
             onChange={(e) => setTechStack(e.target.value)}
             required
           />
-          {fieldErrors.techStack && (
-            <p className="text-red-500 text-xs mt-1">{fieldErrors.techStack}</p>
-          )}
-        </div>
+        </label>
 
-        {/* Enlace GitHub */}
-        <input
-          type="url"
-          placeholder="Enlace GitHub"
-          className="input-field w-full p-2 border rounded-md dark:bg-gray-700 dark:text-white"
-          value={githubLink}
-          onChange={(e) => setGithubLink(e.target.value)}
-        />
+        <label>
+          <span className="text-gray-700 dark:text-white">GitHub</span>
+          <input
+            type="url"
+            placeholder="URL del repositorio"
+            className="w-full p-2 border rounded-md dark:bg-gray-700 dark:text-white"
+            value={githubLink}
+            onChange={(e) => setGithubLink(e.target.value)}
+          />
+        </label>
 
-        {/* Enlace Demo */}
-        <input
-          type="url"
-          placeholder="Demo Online (opcional)"
-          className="input-field w-full p-2 border rounded-md dark:bg-gray-700 dark:text-white"
-          value={liveDemo}
-          onChange={(e) => setLiveDemo(e.target.value)}
-        />
+        <label>
+          <span className="text-gray-700 dark:text-white">Demo Online</span>
+          <input
+            type="url"
+            placeholder="URL de la demo"
+            className="w-full p-2 border rounded-md dark:bg-gray-700 dark:text-white"
+            value={liveDemo}
+            onChange={(e) => setLiveDemo(e.target.value)}
+          />
+        </label>
 
-        {/* Botón de envío */}
+        <label>
+          <span className="text-gray-700 dark:text-white">Imagen del Proyecto</span>
+          <input
+            type="file"
+            className="w-full p-2 border rounded-md dark:bg-gray-700 dark:text-white"
+            onChange={(e) => setImageFile(e.target.files?.[0] || null)}
+          />
+        </label>
+
+        <label>
+          <span className="text-gray-700 dark:text-white">Etiquetas (Presiona Enter para añadir)</span>
+          <input
+            type="text"
+            className="w-full p-2 border rounded-md dark:bg-gray-700 dark:text-white"
+            onKeyDown={handleTagInput}
+            placeholder="Ej: React, TypeScript"
+          />
+          <div className="flex flex-wrap gap-2 mt-2">
+            {tags.map((tag, index) => (
+              <span key={index} className="bg-blue-500 text-white px-2 py-1 rounded-md text-sm">
+                {tag} <button type="button" onClick={() => removeTag(tag)}>❌</button>
+              </span>
+            ))}
+          </div>
+        </label>
+
         <button
           type="submit"
-          className={`bg-blue-600 text-white px-4 py-2 rounded-md font-medium shadow-md hover:scale-105 transition-all duration-300 ${
-            loading ? "opacity-50 cursor-not-allowed" : ""
-          }`}
+          className="bg-blue-600 text-white px-4 py-2 rounded-md font-medium shadow-md hover:scale-105 transition-all duration-300"
           disabled={loading}
         >
           {loading ? "Guardando..." : "Añadir Proyecto"}

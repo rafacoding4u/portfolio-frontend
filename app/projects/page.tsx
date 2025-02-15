@@ -13,6 +13,9 @@ import {
   XMarkIcon,
 } from "@heroicons/react/24/solid";
 import AddProject from "@/app/projects/AddProject";
+import Link from "next/link";
+
+
 
 // Animaciones
 const fadeInUp = {
@@ -383,6 +386,14 @@ export default function Projects() {
                 <PlayIcon className="h-5 w-5" /> Ver Demo
               </a>
             </div>
+
+            {/* Botón "Ver más" */}
+            <Link href={`/projects/${project.id}`}>
+              <button className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 transition">
+                🔍 Ver más
+              </button>
+            </Link>
+
           </motion.div>
         ))}
 
