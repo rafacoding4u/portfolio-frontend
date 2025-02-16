@@ -1,15 +1,18 @@
 "use client";
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import axios from "axios";
 import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import dynamic from "next/dynamic";
+import ReactPlayer from "react-player";
+import { Swiper, SwiperSlide } from "swiper/react"; // Importar Swiper
+import "swiper/css"; // Importar estilos básicos de Swiper
+import "swiper/css/navigation";
+import "swiper/css/pagination";
+import { Navigation, Pagination } from "swiper/modules";
 
-const ReactPlayer = dynamic(() => import("react-player"), { ssr: false });
-
-// 🆕 Interfaz para los proyectos
+// 🆕 Interfaz para los proyectos con imágenes
 interface Project {
   id: number;
   title: string;
@@ -18,104 +21,131 @@ interface Project {
   github_link?: string;
   live_demo?: string;
   image_url?: string;
-  images?: string[]; // 🆕 Nueva propiedad para imágenes adicionales
-  video_url?: string; // 🆕 URL del video de demostración
   tags?: string;
   created_at?: string;
   updated_at?: string;
   client_name?: string;
   project_type?: string;
   duration?: string;
+  images?: { id: number; image_url: string }[]; // Relación con imágenes
 }
 
-export default function ProjectDetail({ params }: { params: { id: string } }) {
+export default function ProjectDetail() {
   const [project, setProject] = useState<Project | null>(null);
   const router = useRouter();
+  const params = useParams(); // Next.js maneja params con useParams()
+
+  useEffect(() => {
+    console.log("🛠️ params.id recibido en frontend:", params.id);
+  }, [params.id]);
 
   useEffect(() => {
     async function fetchProject() {
+      if (!params.id) return;
+
       try {
-        const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/projects/${params.id}`);
+        const response = await axios.get(
+          `${process.env.NEXT_PUBLIC_API_URL}/api/projects/${params.id}`
+        );
         setProject(response.data);
       } catch (error) {
         console.error("Error al obtener el proyecto:", error);
         router.push("/projects"); // Redirige a la lista si el proyecto no existe
       }
     }
+
     fetchProject();
   }, [params.id, router]);
 
   if (!project) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p className="text-gray-600 dark:text-gray-300 text-xl">Cargando proyecto...</p>
+        <p className="text-gray-600 dark:text-gray-300 text-xl">
+          Cargando proyecto...
+        </p>
       </div>
     );
   }
 
   return (
     <motion.div
-      className="min-h-screen py-10 px-6 md:px-12 max-w-4xl mx-auto"
+      className="min-h-screen py-10 px-6 md:px-12 max-w-3xl mx-auto"
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0, transition: { duration: 0.5 } }}
     >
-      {/* Imagen Principal */}
+      {/* Imagen Principal con Lazy Loading */}
       {project.image_url && (
         <Image
           src={project.image_url}
           alt={project.title}
-          width={800}
-          height={400}
+          width={600}
+          height={300}
           className="w-full h-auto rounded-lg shadow-lg mb-6"
+          loading="lazy"
         />
       )}
 
-      {/* Título y descripción */}
-      <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">{project.title}</h1>
-      <p className="text-gray-700 dark:text-gray-300 mb-6 text-lg">{project.description}</p>
+      {/* Título */}
+      <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
+        {project.title}
+      </h1>
+
+      {/* Descripción */}
+      <p className="text-gray-700 dark:text-gray-300 mb-6">
+        {project.description}
+      </p>
 
       {/* Información adicional */}
-      <div className="text-sm text-gray-500 mb-6">
+      <div className="text-sm text-gray-500 mb-4">
         <p>📅 Creado: {project.created_at ? new Date(project.created_at).toLocaleDateString() : "No especificado"}</p>
         <p>🕒 Duración: {project.duration || "No especificado"}</p>
         <p>🛠️ Tecnologías: {project.tech_stack}</p>
-        <p>👤 Cliente: {project.client_name || "No especificado"}</p>
-        <p>📌 Tipo de Proyecto: {project.project_type || "No especificado"}</p>
       </div>
 
       {/* Etiquetas */}
       <div className="flex flex-wrap gap-2 mb-6">
-        {project.tags && JSON.parse(project.tags).map((tag: string, index: number) => (
-          <span key={index} className="bg-blue-100 text-blue-600 text-xs font-semibold px-2 py-1 rounded-full">
-            #{tag}
-          </span>
-        ))}
+        {project.tags &&
+          JSON.parse(project.tags).map((tag: string, index: number) => (
+            <span
+              key={index}
+              className="bg-blue-100 text-blue-600 text-xs font-semibold px-2 py-1 rounded-full"
+            >
+              #{tag}
+            </span>
+          ))}
       </div>
 
-      {/* Galería de Imágenes */}
+      {/* 🔥 Carrusel de imágenes adicionales con Swiper.js */}
       {project.images && project.images.length > 0 && (
-        <div className="mb-6">
-          <h2 className="text-2xl font-semibold mb-4">📷 Capturas de Pantalla</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {project.images.map((img, index) => (
-              <Image
-                key={index}
-                src={img}
-                alt={`Captura ${index + 1}`}
-                width={400}
-                height={250}
-                className="rounded-lg shadow-md cursor-pointer hover:scale-105 transition"
-              />
+        <div className="mt-6">
+          <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">📸 Imágenes del Proyecto</h3>
+          <Swiper
+            navigation
+            pagination={{ clickable: true }}
+            modules={[Navigation, Pagination]}
+            className="rounded-lg shadow-lg"
+          >
+            {project.images.map((img) => (
+              <SwiperSlide key={img.id}>
+                <Image
+                  src={img.image_url}
+                  alt={`Imagen del proyecto ${project.title}`}
+                  width={800}
+                  height={400}
+                  className="w-full h-auto rounded-lg shadow-md"
+                  loading="lazy"
+                />
+              </SwiperSlide>
             ))}
-          </div>
+          </Swiper>
         </div>
       )}
 
-      {/* Video de Demostración */}
-      {project.video_url && (
-        <div className="mb-6">
-          <h2 className="text-2xl font-semibold mb-4">🎥 Video de Demostración</h2>
-          <ReactPlayer url={project.video_url} controls width="100%" height="400px" />
+      {/* 🔥 Video de demostración (opcional) */}
+      {project.live_demo && (
+        <div className="mt-6">
+          <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">🎥 Video de Demostración</h3>
+          <ReactPlayer url={project.live_demo} controls width="100%" />
         </div>
       )}
 
@@ -152,17 +182,6 @@ export default function ProjectDetail({ params }: { params: { id: string } }) {
           </button>
         </Link>
       </div>
-
-      <div className="mt-6">
-        <h2 className="text-2xl font-bold mb-4">🎥 Video de Demostración</h2>
-        <ReactPlayer
-          url="https://www.youtube.com/watch?v=unvDaEYnc_I"
-          width="100%"
-          height="400px"
-          controls={true}
-        />
-      </div>
-
     </motion.div>
   );
 }
