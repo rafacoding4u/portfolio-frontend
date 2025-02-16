@@ -19,10 +19,11 @@ export default function AddProject({ onProjectAdded }: AddProjectProps) {
   const [featured, setFeatured] = useState(false);
   const [tags, setTags] = useState<string[]>([]);
   const [imageUrl, setImageUrl] = useState("");
-  const [imageFile, setImageFile] = useState<File | null>(null);
-
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [projectId, setProjectId] = useState<number | null>(null); // ✅ ID del proyecto
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [videoUrl, setVideoUrl] = useState("");
 
   const handleTagInput = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter" && e.currentTarget.value.trim()) {
@@ -36,23 +37,27 @@ export default function AddProject({ onProjectAdded }: AddProjectProps) {
     setTags(tags.filter((tag) => tag !== tagToRemove));
   };
 
-  const handleImageUpload = async () => {
-    if (!imageFile) return;
+  const handleImageUpload = async (projectId: number) => {
+    if (!imageFiles.length) return;
 
     const formData = new FormData();
-    formData.append("image", imageFile);
+    imageFiles.forEach((file) => formData.append("images[]", file)); // ✅ Subir múltiples imágenes
+    formData.append("project_id", projectId.toString()); // ✅ Enviar ID del proyecto
 
     try {
-      const response = await axios.post("http://127.0.0.1:8000/api/upload", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
+      const response = await axios.post(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/upload-images`,
+        formData,
+        { headers: { "Content-Type": "multipart/form-data" } }
+      );
 
-      setImageUrl(response.data.imageUrl);
+      console.log("✅ Imágenes subidas:", response.data);
     } catch (error) {
-      console.error("Error al subir la imagen:", error);
-      setError("Error al subir la imagen. Inténtalo de nuevo.");
+      console.error("❌ Error al subir las imágenes:", error);
+      setError("Error al subir las imágenes. Inténtalo de nuevo.");
     }
   };
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -60,24 +65,37 @@ export default function AddProject({ onProjectAdded }: AddProjectProps) {
     setError("");
 
     try {
-      if (imageFile) {
-        await handleImageUpload();
+      // ✅ 1️⃣ Crear el proyecto en la API
+      const createdProject = await axios.post(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/projects`,
+        {
+          title,
+          description,
+          tech_stack: techStack,
+          github_link: githubLink || null,
+          live_demo: liveDemo || null,
+          client_name: clientName || null,
+          project_type: projectType || null,
+          duration: duration || null,
+          featured,
+          tags,
+          image_url: imageUrl || null,
+        }
+      );
+
+      const newProjectId = createdProject.data.id;
+      console.log("✅ Proyecto creado con ID:", newProjectId);
+      setProjectId(newProjectId); // ✅ Guardamos el ID del proyecto recién creado
+
+      // ✅ 2️⃣ Subir imágenes si hay imágenes seleccionadas
+      if (imageFiles.length > 0) {
+        console.log("📸 Subiendo imágenes...");
+        await handleImageUpload(newProjectId); // ✅ Ahora pasa el ID correctamente
+      } else {
+        console.log("⚠️ No hay imágenes para subir.");
       }
 
-      await axios.post("http://127.0.0.1:8000/api/projects", {
-        title,
-        description,
-        tech_stack: techStack,
-        github_link: githubLink || null,
-        live_demo: liveDemo || null,
-        client_name: clientName || null,
-        project_type: projectType || null,
-        duration: duration || null,
-        featured,
-        tags,
-        image_url: imageUrl || null,
-      });
-
+      // ✅ 3️⃣ Resetear el formulario
       setTitle("");
       setDescription("");
       setTechStack("");
@@ -89,11 +107,12 @@ export default function AddProject({ onProjectAdded }: AddProjectProps) {
       setFeatured(false);
       setTags([]);
       setImageUrl("");
-      setImageFile(null);
+      setImageFiles([]);
 
+      // ✅ 4️⃣ Notificar que el proyecto se ha agregado
       onProjectAdded();
     } catch (error) {
-      console.error("Error al agregar el proyecto:", error);
+      console.error("❌ Error al agregar el proyecto:", error);
       if (error instanceof AxiosError && error.response?.data?.message) {
         setError(`Error: ${error.response.data.message}`);
       } else {
@@ -103,6 +122,9 @@ export default function AddProject({ onProjectAdded }: AddProjectProps) {
       setLoading(false);
     }
   };
+
+
+
 
   return (
     <motion.form
@@ -114,6 +136,13 @@ export default function AddProject({ onProjectAdded }: AddProjectProps) {
       <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
         ➕ Añadir Proyecto
       </h2>
+
+      {projectId && (
+        <p className="text-green-600 font-semibold mt-4">
+          ✅ Proyecto creado con éxito. ID: {projectId}
+        </p>
+      )}
+
 
       {error && <p className="text-red-500 text-sm mb-3">{error}</p>}
 
@@ -176,21 +205,33 @@ export default function AddProject({ onProjectAdded }: AddProjectProps) {
         </label>
 
         <label>
-          <span className="text-gray-700 dark:text-white">Imagen del Proyecto</span>
+          <span className="text-gray-700 dark:text-white">Subir Imágenes</span>
           <input
             type="file"
+            multiple
             className="w-full p-2 border rounded-md dark:bg-gray-700 dark:text-white"
-            onChange={(e) => setImageFile(e.target.files?.[0] || null)}
+            onChange={(e) => setImageFiles(Array.from(e.target.files || []))}
           />
         </label>
 
         <label>
-          <span className="text-gray-700 dark:text-white">Etiquetas (Presiona Enter para añadir)</span>
+          <span className="text-gray-700 dark:text-white">Video (URL de YouTube o Vimeo)</span>
+          <input
+            type="url"
+            placeholder="URL del video de demostración"
+            className="w-full p-2 border rounded-md dark:bg-gray-700 dark:text-white"
+            value={videoUrl}
+            onChange={(e) => setVideoUrl(e.target.value)}
+          />
+        </label>
+
+        <label>
+          <span className="text-gray-700 dark:text-white">Etiquetas</span>
           <input
             type="text"
+            placeholder="Ej: React, TypeScript (Presiona Enter)"
             className="w-full p-2 border rounded-md dark:bg-gray-700 dark:text-white"
             onKeyDown={handleTagInput}
-            placeholder="Ej: React, TypeScript"
           />
           <div className="flex flex-wrap gap-2 mt-2">
             {tags.map((tag, index) => (
@@ -201,11 +242,7 @@ export default function AddProject({ onProjectAdded }: AddProjectProps) {
           </div>
         </label>
 
-        <button
-          type="submit"
-          className="bg-blue-600 text-white px-4 py-2 rounded-md font-medium shadow-md hover:scale-105 transition-all duration-300"
-          disabled={loading}
-        >
+        <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded-md font-medium shadow-md hover:scale-105 transition-all duration-300" disabled={loading}>
           {loading ? "Guardando..." : "Añadir Proyecto"}
         </button>
       </div>
