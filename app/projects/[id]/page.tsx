@@ -69,7 +69,7 @@ export default function ProjectDetail() {
         router.push("/projects");
       }
     }
-    
+
 
     fetchProject();
   }, [params.id, router]);
@@ -83,22 +83,35 @@ export default function ProjectDetail() {
       </div>
     );
   }
+  // ✅ Función para convertir URL de YouTube a formato embebido
+  const formatYouTubeUrl = (url: string): string | null => {
+    try {
+      const parsedUrl = new URL(url);
+      if (parsedUrl.hostname.includes("youtube.com")) {
+        return `https://www.youtube.com/embed/${parsedUrl.searchParams.get("v")}`;
+      } else if (parsedUrl.hostname.includes("youtu.be")) {
+        return `https://www.youtube.com/embed/${parsedUrl.pathname.substring(1)}`;
+      }
+    } catch (error) {
+      console.error("❌ Error al formatear la URL de YouTube:", error);
+    }
+    return null; // Si no es un enlace válido de YouTube, devolvemos null
+  };
 
   return (
     <motion.div
-    className={`min-h-screen py-10 px-6 md:px-12 max-w-3xl mx-auto transition-all duration-500 ${
-      darkMode ? "bg-gray-900 text-white" : "bg-white text-gray-900"
-    }`}
-    initial={{ opacity: 0, y: -20 }}
-    animate={{ opacity: 1, y: 0, transition: { duration: 0.5 } }}
-  >
-    {/* ✅ Botón para alternar Modo Oscuro */}
-    <button
-      onClick={() => setDarkMode(!darkMode)}
-      className="absolute top-5 right-5 px-4 py-2 bg-gray-800 text-white rounded-lg shadow-md hover:bg-gray-700 transition"
+      className={`min-h-screen py-10 px-6 md:px-12 max-w-3xl mx-auto transition-all duration-500 ${darkMode ? "bg-gray-900 text-white" : "bg-white text-gray-900"
+        }`}
+      initial={{ opacity: 0, y: -20 }}
+      animate={{ opacity: 1, y: 0, transition: { duration: 0.5 } }}
     >
-      {darkMode ? "☀️" : "🌙"}
-    </button>
+      {/* ✅ Botón para alternar Modo Oscuro */}
+      <button
+        onClick={() => setDarkMode(!darkMode)}
+        className="absolute top-5 right-5 px-4 py-2 bg-gray-800 text-white rounded-lg shadow-md hover:bg-gray-700 transition"
+      >
+        {darkMode ? "☀️" : "🌙"}
+      </button>
 
       {/* ✅ SEO Dinámico */}
       <NextSeo
@@ -216,10 +229,22 @@ export default function ProjectDetail() {
               ▶️ Ver Video
             </button>
           ) : (
-            <ReactPlayer url={project.live_demo} controls width="100%" />
+            formatYouTubeUrl(project.live_demo) ? (
+              <div className="relative w-full aspect-video">
+                <iframe
+                  src={formatYouTubeUrl(project.live_demo) || ""}
+                  title="Video de demostración"
+                  allowFullScreen
+                  className="w-full h-full rounded-lg shadow-lg"
+                ></iframe>
+              </div>
+            ) : (
+              <ReactPlayer url={project.live_demo} controls width="100%" />
+            )
           )}
         </div>
       )}
+
 
       {/* ✅ Enlaces */}
       <div className="mt-4 flex gap-3">

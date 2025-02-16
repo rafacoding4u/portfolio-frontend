@@ -65,63 +65,54 @@ export default function AddProject({ onProjectAdded }: AddProjectProps) {
     setError("");
 
     try {
-      // ✅ 1️⃣ Crear el proyecto en la API
-      const createdProject = await axios.post(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/projects`,
-        {
-          title,
-          description,
-          tech_stack: techStack,
-          github_link: githubLink || null,
-          live_demo: liveDemo || null,
-          client_name: clientName || null,
-          project_type: projectType || null,
-          duration: duration || null,
-          featured,
-          tags,
-          image_url: imageUrl || null,
+        const createdProject = await axios.post("http://127.0.0.1:8000/api/projects", {
+            title,
+            description,
+            tech_stack: techStack,
+            github_link: githubLink || null,
+            live_demo: videoUrl || null, // ✅ Asegurar que el video se envía correctamente
+            client_name: clientName || null,
+            project_type: projectType || null,
+            duration: duration || null,
+            featured,
+            tags,
+            image_url: imageUrl || null,
+        });
+
+        console.log("✅ Proyecto creado con ID:", createdProject.data.id);
+        setProjectId(createdProject.data.id);
+
+        if (imageFiles.length) {
+            await handleImageUpload(createdProject.data.id);
         }
-      );
 
-      const newProjectId = createdProject.data.id;
-      console.log("✅ Proyecto creado con ID:", newProjectId);
-      setProjectId(newProjectId); // ✅ Guardamos el ID del proyecto recién creado
+        // Resetear formulario
+        setTitle("");
+        setDescription("");
+        setTechStack("");
+        setGithubLink("");
+        setVideoUrl(""); // ✅ Resetear el campo del video
+        setClientName("");
+        setProjectType("");
+        setDuration("");
+        setFeatured(false);
+        setTags([]);
+        setImageUrl("");
+        setImageFiles([]);
 
-      // ✅ 2️⃣ Subir imágenes si hay imágenes seleccionadas
-      if (imageFiles.length > 0) {
-        console.log("📸 Subiendo imágenes...");
-        await handleImageUpload(newProjectId); // ✅ Ahora pasa el ID correctamente
-      } else {
-        console.log("⚠️ No hay imágenes para subir.");
-      }
-
-      // ✅ 3️⃣ Resetear el formulario
-      setTitle("");
-      setDescription("");
-      setTechStack("");
-      setGithubLink("");
-      setLiveDemo("");
-      setClientName("");
-      setProjectType("");
-      setDuration("");
-      setFeatured(false);
-      setTags([]);
-      setImageUrl("");
-      setImageFiles([]);
-
-      // ✅ 4️⃣ Notificar que el proyecto se ha agregado
-      onProjectAdded();
+        onProjectAdded();
     } catch (error) {
-      console.error("❌ Error al agregar el proyecto:", error);
-      if (error instanceof AxiosError && error.response?.data?.message) {
-        setError(`Error: ${error.response.data.message}`);
-      } else {
-        setError("Error al agregar el proyecto. Inténtalo más tarde.");
-      }
+        console.error("❌ Error al agregar el proyecto:", error);
+        if (error instanceof AxiosError && error.response?.data?.message) {
+            setError(`Error: ${error.response.data.message}`);
+        } else {
+            setError("Error al agregar el proyecto. Inténtalo más tarde.");
+        }
     } finally {
-      setLoading(false);
+        setLoading(false);
     }
-  };
+};
+
 
 
 
