@@ -15,7 +15,8 @@
     "framer-motion": "^12.4.2",
     "next": "15.1.7",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "react-player": "^2.16.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
@@ -29,4 +30,3 @@
     "typescript": "^5"
   }
 }
-
