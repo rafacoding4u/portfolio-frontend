@@ -28,6 +28,7 @@ interface Project {
   tech_stack: string;
   github_link?: string;
   live_demo?: string;
+  video_url?: string; // ✅ Agregado para incluir la URL del video
   image_url?: string;
   tags?: string;
   created_at?: string;
@@ -218,7 +219,7 @@ export default function ProjectDetail() {
       )}
 
       {/* ✅ Video de demostración con botón de carga diferida */}
-      {project.live_demo && (
+      {project.video_url && (
         <div className="mt-6">
           <h3 className="text-xl font-semibold mb-4">🎥 Video de Demostración</h3>
           {!showVideo ? (
@@ -229,21 +230,22 @@ export default function ProjectDetail() {
               ▶️ Ver Video
             </button>
           ) : (
-            formatYouTubeUrl(project.live_demo) ? (
+            formatYouTubeUrl(project.video_url) ? (
               <div className="relative w-full aspect-video">
                 <iframe
-                  src={formatYouTubeUrl(project.live_demo) || ""}
+                  src={formatYouTubeUrl(project.video_url) || ""}
                   title="Video de demostración"
                   allowFullScreen
                   className="w-full h-full rounded-lg shadow-lg"
                 ></iframe>
               </div>
             ) : (
-              <ReactPlayer url={project.live_demo} controls width="100%" />
+              <ReactPlayer url={project.video_url} controls width="100%" />
             )
           )}
         </div>
       )}
+
 
 
       {/* ✅ Enlaces */}

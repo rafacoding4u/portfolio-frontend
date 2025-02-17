@@ -64,20 +64,29 @@ export default function AddProject({ onProjectAdded }: AddProjectProps) {
     setLoading(true);
     setError("");
 
+    const projectData = {
+        title,
+        description,
+        tech_stack: techStack,
+        github_link: githubLink?.trim() || null,
+        live_demo: liveDemo?.trim() || null,
+        video_url: videoUrl?.trim() || null,
+        client_name: clientName?.trim() || null,
+        project_type: projectType?.trim() || null,
+        duration: duration?.trim() || null,
+        featured,
+        tags,  // ✅ Enviar directamente como array
+        image_url: imageUrl?.trim() || null,
+    };
+
+    console.log("📤 Enviando proyecto:", projectData); // ✅ Depuración
+
     try {
-        const createdProject = await axios.post("http://127.0.0.1:8000/api/projects", {
-            title,
-            description,
-            tech_stack: techStack,
-            github_link: githubLink || null,
-            live_demo: videoUrl || null, // ✅ Asegurar que el video se envía correctamente
-            client_name: clientName || null,
-            project_type: projectType || null,
-            duration: duration || null,
-            featured,
-            tags,
-            image_url: imageUrl || null,
-        });
+        const createdProject = await axios.post(
+            "http://127.0.0.1:8000/api/projects",
+            projectData,
+            { headers: { "Content-Type": "application/json" } }
+        );
 
         console.log("✅ Proyecto creado con ID:", createdProject.data.id);
         setProjectId(createdProject.data.id);
@@ -86,17 +95,18 @@ export default function AddProject({ onProjectAdded }: AddProjectProps) {
             await handleImageUpload(createdProject.data.id);
         }
 
-        // Resetear formulario
+        // ✅ Resetear formulario
         setTitle("");
         setDescription("");
         setTechStack("");
         setGithubLink("");
-        setVideoUrl(""); // ✅ Resetear el campo del video
+        setLiveDemo("");
+        setVideoUrl(""); // ✅ Resetear correctamente el campo de video
         setClientName("");
         setProjectType("");
         setDuration("");
         setFeatured(false);
-        setTags([]);
+        setTags([]); // ✅ Resetear como array vacío
         setImageUrl("");
         setImageFiles([]);
 
@@ -112,6 +122,10 @@ export default function AddProject({ onProjectAdded }: AddProjectProps) {
         setLoading(false);
     }
 };
+
+
+
+
 
 
 
@@ -215,6 +229,7 @@ export default function AddProject({ onProjectAdded }: AddProjectProps) {
             onChange={(e) => setVideoUrl(e.target.value)}
           />
         </label>
+
 
         <label>
           <span className="text-gray-700 dark:text-white">Etiquetas</span>
