@@ -18,12 +18,13 @@ export default function AddProject({ onProjectAdded }: AddProjectProps) {
   const [duration, setDuration] = useState("");
   const [featured, setFeatured] = useState(false);
   const [tags, setTags] = useState<string[]>([]);
-  const [imageUrl, setImageUrl] = useState("");
+  //const [imageUrl, setImageUrl] = useState("");
   const [imageFiles, setImageFiles] = useState<File[]>([]);
-  const [projectId, setProjectId] = useState<number | null>(null); // ✅ ID del proyecto
+  const [projectId, setProjectId] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [videoUrl, setVideoUrl] = useState("");
+  const [videoFile, setVideoFile] = useState<File | null>(null); // ✅ Agregado para manejar archivos de video
 
   const handleTagInput = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter" && e.currentTarget.value.trim()) {
@@ -64,69 +65,81 @@ export default function AddProject({ onProjectAdded }: AddProjectProps) {
     setLoading(true);
     setError("");
 
-    const projectData = {
-        title,
-        description,
-        tech_stack: techStack,
-        github_link: githubLink?.trim() || null,
-        live_demo: liveDemo?.trim() || null,
-        video_url: videoUrl?.trim() || null,
-        client_name: clientName?.trim() || null,
-        project_type: projectType?.trim() || null,
-        duration: duration?.trim() || null,
-        featured,
-        tags,  // ✅ Enviar directamente como array
-        image_url: imageUrl?.trim() || null,
-    };
+    const formData = new FormData();
+    formData.append("title", title);
+    formData.append("description", description);
+    formData.append("tech_stack", techStack);
+    formData.append("github_link", githubLink?.trim() || "");
+    formData.append("live_demo", liveDemo?.trim() || "");
+    formData.append("client_name", clientName?.trim() || "");
+    formData.append("project_type", projectType?.trim() || "");
+    formData.append("duration", duration?.trim() || "");
 
-    console.log("📤 Enviando proyecto:", projectData); // ✅ Depuración
+    // ✅ Convertir `featured` a 0 o 1
+    formData.append("featured", featured ? "1" : "0");
+
+    // ✅ Enviar `tags` correctamente como un array en FormData
+    tags.forEach((tag, index) => formData.append(`tags[${index}]`, tag));
+
+    // ✅ Verificar si se subió un video o solo es una URL
+    if (videoFile) {
+      formData.append("video_file", videoFile);
+    } else {
+      formData.append("video_url", videoUrl?.trim() || "");
+    }
+
+
+    // ✅ Subir imágenes si existen
+    imageFiles.forEach((file) => formData.append("images[]", file));
+
+    console.log("📤 Enviando proyecto con FormData:", Object.fromEntries(formData.entries()));
 
     try {
-        const createdProject = await axios.post(
-            "http://127.0.0.1:8000/api/projects",
-            projectData,
-            { headers: { "Content-Type": "application/json" } }
-        );
+      const response = await axios.post(
+        "http://127.0.0.1:8000/api/projects",
+        formData,
+        { headers: { "Content-Type": "multipart/form-data" } }
+      );
 
-        console.log("✅ Proyecto creado con ID:", createdProject.data.id);
-        setProjectId(createdProject.data.id);
+      console.log("✅ Proyecto creado con ID:", response.data.id);
+      setProjectId(response.data.id);
 
-        if (imageFiles.length) {
-            await handleImageUpload(createdProject.data.id);
-        }
+      // ✅ Subir imágenes asociadas si existen
+      if (imageFiles.length) {
+        await handleImageUpload(response.data.id);
+      }
 
-        // ✅ Resetear formulario
-        setTitle("");
-        setDescription("");
-        setTechStack("");
-        setGithubLink("");
-        setLiveDemo("");
-        setVideoUrl(""); // ✅ Resetear correctamente el campo de video
-        setClientName("");
-        setProjectType("");
-        setDuration("");
-        setFeatured(false);
-        setTags([]); // ✅ Resetear como array vacío
-        setImageUrl("");
-        setImageFiles([]);
-
-        onProjectAdded();
+      // ✅ Resetear formulario tras el envío
+      resetForm();
+      onProjectAdded();
     } catch (error) {
-        console.error("❌ Error al agregar el proyecto:", error);
-        if (error instanceof AxiosError && error.response?.data?.message) {
-            setError(`Error: ${error.response.data.message}`);
-        } else {
-            setError("Error al agregar el proyecto. Inténtalo más tarde.");
-        }
+      console.error("❌ Error al agregar el proyecto:", error);
+      if (error instanceof AxiosError && error.response?.data?.message) {
+        setError(`Error: ${error.response.data.message}`);
+      } else {
+        setError("Error al agregar el proyecto. Inténtalo más tarde.");
+      }
     } finally {
-        setLoading(false);
+      setLoading(false);
     }
-};
+  };
 
-
-
-
-
+  // ✅ Función para resetear los valores del formulario tras el envío exitoso
+  const resetForm = () => {
+    setTitle("");
+    setDescription("");
+    setTechStack("");
+    setGithubLink("");
+    setLiveDemo("");
+    setVideoUrl("");
+    setClientName("");
+    setProjectType("");
+    setDuration("");
+    setFeatured(false);
+    setTags([]);
+    setImageFiles([]);
+    setVideoFile(null);
+  };
 
 
 
@@ -210,12 +223,22 @@ export default function AddProject({ onProjectAdded }: AddProjectProps) {
         </label>
 
         <label>
-          <span className="text-gray-700 dark:text-white">Subir Imágenes</span>
+          <span className="text-gray-700 dark:text-white">Imágenes del Proyecto</span>
           <input
             type="file"
             multiple
             className="w-full p-2 border rounded-md dark:bg-gray-700 dark:text-white"
-            onChange={(e) => setImageFiles(Array.from(e.target.files || []))}
+            onChange={(e) => setImageFiles(Array.from(e.target.files || []))} // ✅ Guardar múltiples imágenes
+          />
+        </label>
+
+        <label>
+          <span className="text-gray-700 dark:text-white">Subir Video</span>
+          <input
+            type="file"
+            accept="video/mp4,video/mov,video/avi,video/wmv"
+            className="w-full p-2 border rounded-md dark:bg-gray-700 dark:text-white"
+            onChange={(e) => setVideoFile(e.target.files ? e.target.files[0] : null)}
           />
         </label>
 

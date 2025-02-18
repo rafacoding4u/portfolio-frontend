@@ -9,7 +9,7 @@ import dynamic from "next/dynamic";
 import { NextSeo } from "next-seo";
 
 // 🔥 Carga diferida de ReactPlayer y Swiper
-const ReactPlayer = dynamic(() => import("react-player"), { ssr: false });
+//const ReactPlayer = dynamic(() => import("react-player"), { ssr: false });
 const Swiper = dynamic(() => import("swiper/react").then((mod) => mod.Swiper), { ssr: false });
 const SwiperSlide = dynamic(() => import("swiper/react").then((mod) => mod.SwiperSlide), { ssr: false });
 
@@ -28,7 +28,8 @@ interface Project {
   tech_stack: string;
   github_link?: string;
   live_demo?: string;
-  video_url?: string; // ✅ Agregado para incluir la URL del video
+  video_url?: string; // ✅ URL de video en YouTube/Vimeo
+  video_file?: string; // ✅ Agregar `video_file` para el video subido
   image_url?: string;
   tags?: string;
   created_at?: string;
@@ -37,12 +38,13 @@ interface Project {
   project_type?: string;
   duration?: string;
   images?: { id: number; image_url: string }[];
+  videos?: { id: number; video_url: string }[];
 }
 
 export default function ProjectDetail() {
   const [project, setProject] = useState<Project | null>(null);
   const [darkMode, setDarkMode] = useState(false);
-  const [showVideo, setShowVideo] = useState(false);
+  //const [showVideo, setShowVideo] = useState(false);
   const router = useRouter();
   const params = useParams();
 
@@ -64,6 +66,7 @@ export default function ProjectDetail() {
         const response = await axios.get(
           `${process.env.NEXT_PUBLIC_API_URL}/api/projects/${params.id}`
         );
+        
         setProject(response.data);
       } catch (error) {
         console.error("❌ Error al obtener el proyecto:", error);
@@ -85,19 +88,21 @@ export default function ProjectDetail() {
     );
   }
   // ✅ Función para convertir URL de YouTube a formato embebido
-  const formatYouTubeUrl = (url: string): string | null => {
+  const formatYouTubeUrl = (url: string): string | undefined => {
     try {
       const parsedUrl = new URL(url);
       if (parsedUrl.hostname.includes("youtube.com")) {
-        return `https://www.youtube.com/embed/${parsedUrl.searchParams.get("v")}`;
+        const videoId = parsedUrl.searchParams.get("v");
+        return videoId ? `https://www.youtube.com/embed/${videoId}` : undefined;
       } else if (parsedUrl.hostname.includes("youtu.be")) {
         return `https://www.youtube.com/embed/${parsedUrl.pathname.substring(1)}`;
       }
     } catch (error) {
       console.error("❌ Error al formatear la URL de YouTube:", error);
     }
-    return null; // Si no es un enlace válido de YouTube, devolvemos null
+    return undefined; // 🔹 Devolver undefined si no es una URL válida
   };
+
 
   return (
     <motion.div
@@ -130,16 +135,16 @@ export default function ProjectDetail() {
       />
 
       {/* ✅ Imagen Principal con Lazy Loading */}
-      {project.image_url && (
+      {project.image_url ? (
         <Image
           src={project.image_url}
           alt={project.title}
           width={600}
           height={300}
           className="w-full h-auto rounded-lg shadow-lg mb-6"
-          loading="lazy"
         />
-      )}
+      ) : null}
+
 
       {/* Título */}
       <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
@@ -174,12 +179,11 @@ export default function ProjectDetail() {
               {project.images.map((img) => (
                 <SwiperSlide key={img.id}>
                   <Image
-                    src={img.image_url}
+                    src={img.image_url.startsWith("http") ? img.image_url : `${process.env.NEXT_PUBLIC_API_URL}${img.image_url}`}
                     alt={`Imagen del proyecto ${project.title}`}
-                    width={800}
-                    height={400}
-                    className="w-full h-auto rounded-lg shadow-md"
+                    width={800} height={400}
                     loading="lazy"
+                    onError={(e) => console.error("❌ Error al cargar la imagen:", e)}
                   />
                 </SwiperSlide>
               ))}
@@ -218,33 +222,56 @@ export default function ProjectDetail() {
         </div>
       )}
 
-      {/* ✅ Video de demostración con botón de carga diferida */}
-      {project.video_url && (
+      {/* ✅ Videos de demostración */}
+      {(project.video_url || project.video_file || (project.videos && project.videos.length > 0)) && (
         <div className="mt-6">
-          <h3 className="text-xl font-semibold mb-4">🎥 Video de Demostración</h3>
-          {!showVideo ? (
-            <button
-              onClick={() => setShowVideo(true)}
-              className="px-4 py-2 bg-blue-500 text-white rounded-lg shadow-md hover:bg-blue-600 transition"
-            >
-              ▶️ Ver Video
-            </button>
-          ) : (
-            formatYouTubeUrl(project.video_url) ? (
+          <h3 className="text-xl font-semibold mb-4">🎥 Videos de Demostración</h3>
+
+          {/* ✅ Video de YouTube/Vimeo */}
+          {project.video_url && formatYouTubeUrl(project.video_url) ? (
+            <div className="mb-4">
+              <h4 className="text-lg font-medium">🌍 Video en YouTube/Vimeo</h4>
               <div className="relative w-full aspect-video">
                 <iframe
-                  src={formatYouTubeUrl(project.video_url) || ""}
+                  src={formatYouTubeUrl(project.video_url)}
                   title="Video de demostración"
                   allowFullScreen
                   className="w-full h-full rounded-lg shadow-lg"
                 ></iframe>
               </div>
-            ) : (
-              <ReactPlayer url={project.video_url} controls width="100%" />
-            )
+            </div>
+          ) : null}
+
+          {/* ✅ Video Subido Principal */}
+          {project.video_file && project.video_file.startsWith("http") ? (
+            <div className="mb-4">
+              <h4 className="text-lg font-medium">💾 Video Subido</h4>
+              <video controls className="w-full rounded-lg shadow-lg">
+                <source src={project.video_file} type="video/mp4" />
+                Tu navegador no soporta el elemento de video.
+              </video>
+            </div>
+          ) : null}
+
+          {/* ✅ Mostrar todos los vídeos almacenados en project_videos */}
+          {project.videos && project.videos.length > 0 && (
+            <div className="mt-6">
+              <h3 className="text-xl font-semibold mb-4">📽️ Otros Videos del Proyecto</h3>
+              {project.videos.map((video: { id: number; video_url: string }) => (
+                <div key={video.id} className="mb-4">
+                  <video controls className="w-full rounded-lg shadow-lg">
+                    <source src={video.video_url} type="video/mp4" />
+                    Tu navegador no soporta el elemento de video.
+                  </video>
+                </div>
+              ))}
+            </div>
           )}
         </div>
       )}
+
+
+
 
 
 
