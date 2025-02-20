@@ -31,6 +31,7 @@ interface Project {
   video_url?: string; // ✅ Agregado para incluir la URL del video
   image_url?: string;
   tags?: string;
+  featured: boolean;
   created_at?: string;
   updated_at?: string;
   client_name?: string;
