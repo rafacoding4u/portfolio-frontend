@@ -30,7 +30,7 @@ interface Project {
   live_demo?: string;
   video_url?: string; // ✅ Agregado para incluir la URL del video
   image_url?: string;
-  tags?: string;
+  tags?: string[];
   featured: boolean;
   created_at?: string;
   updated_at?: string;
@@ -54,13 +54,12 @@ export default function ProjectDetail() {
   }, []);
 
   useEffect(() => {
-    console.log("🛠️ params.id recibido en frontend:", params.id);
-  }, [params.id]);
+    if (!params.id) {
+      console.error("⚠️ Error: params.id es undefined");
+      return;
+    }
 
-  useEffect(() => {
     async function fetchProject() {
-      if (!params.id) return;
-
       try {
         const response = await axios.get(
           `${process.env.NEXT_PUBLIC_API_URL}/api/projects/${params.id}`
@@ -72,9 +71,9 @@ export default function ProjectDetail() {
       }
     }
 
-
     fetchProject();
   }, [params.id, router]);
+
 
   if (!project) {
     return (
@@ -133,13 +132,14 @@ export default function ProjectDetail() {
       {/* ✅ Imagen Principal con Lazy Loading */}
       {project.image_url && (
         <Image
-          src={project.image_url}
+          src={project.image_url || "/default-placeholder.jpg"}
           alt={project.title}
           width={600}
           height={300}
           className="w-full h-auto rounded-lg shadow-lg mb-6"
           loading="lazy"
         />
+
       )}
 
       {/* Título */}
@@ -158,6 +158,20 @@ export default function ProjectDetail() {
         <p>🕒 Duración: {project.duration || "No especificado"}</p>
         <p>🛠️ Tecnologías: {project.tech_stack}</p>
       </div>
+
+      {/* ✅ Etiquetas del proyecto */}
+      {Array.isArray(project.tags) && project.tags.length > 0 ? (
+        <div className="flex flex-wrap gap-2 mt-2">
+          {project.tags.map((tag, index) => (
+            <span key={index} className="bg-blue-500 text-white px-2 py-1 rounded-md text-sm">
+              {tag}
+            </span>
+          ))}
+        </div>
+      ) : (
+        <p className="text-gray-500 dark:text-gray-400">No hay etiquetas disponibles.</p>
+      )}
+
 
       {/* ✅ Carrusel de imágenes con Lazy Loading */}
       {(() => {
@@ -230,22 +244,21 @@ export default function ProjectDetail() {
             >
               ▶️ Ver Video
             </button>
+          ) : project.video_url.includes("youtube.com") || project.video_url.includes("youtu.be") ? (
+            <div className="relative w-full aspect-video">
+              <iframe
+                src={formatYouTubeUrl(project.video_url) || ""}
+                title="Video de demostración"
+                allowFullScreen
+                className="w-full h-full rounded-lg shadow-lg"
+              ></iframe>
+            </div>
           ) : (
-            formatYouTubeUrl(project.video_url) ? (
-              <div className="relative w-full aspect-video">
-                <iframe
-                  src={formatYouTubeUrl(project.video_url) || ""}
-                  title="Video de demostración"
-                  allowFullScreen
-                  className="w-full h-full rounded-lg shadow-lg"
-                ></iframe>
-              </div>
-            ) : (
-              <ReactPlayer url={project.video_url} controls width="100%" />
-            )
+            <ReactPlayer url={project.video_url} controls width="100%" />
           )}
         </div>
       )}
+
 
 
 

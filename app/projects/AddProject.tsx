@@ -25,6 +25,8 @@ export default function AddProject({ onProjectAdded }: AddProjectProps) {
   const [error, setError] = useState("");
   const [videoUrl, setVideoUrl] = useState("");
   const [mainImage, setMainImage] = useState<File | null>(null);
+  const [videoFiles, setVideoFiles] = useState<File[]>([]);
+
 
 
 
@@ -69,31 +71,49 @@ export default function AddProject({ onProjectAdded }: AddProjectProps) {
     setLoading(true);
     setError("");
 
-    const projectData = {
-      title,
-      description,
-      tech_stack: techStack,
-      github_link: githubLink?.trim() || null,
-      live_demo: liveDemo?.trim() || null,
-      video_url: videoUrl?.trim() || null,
-      client_name: clientName?.trim() || null,
-      project_type: projectType?.trim() || null,
-      duration: duration?.trim() || null,
-      featured,
-      tags,  // ✅ Enviar directamente como array
-      image_url: imageUrl?.trim() || null,
-    };
+    const formData = new FormData();
+    formData.append("title", title);
+    formData.append("description", description);
+    formData.append("tech_stack", techStack);
+    if (githubLink) formData.append("github_link", githubLink);
+    if (liveDemo) formData.append("live_demo", liveDemo);
+    if (clientName) formData.append("client_name", clientName);
+    if (projectType) formData.append("project_type", projectType);
+    if (duration) formData.append("duration", duration);
 
-    console.log("📤 Enviando proyecto:", projectData); // ✅ Depuración
+    // ✅ Corregido `featured`
+    formData.append("featured", featured ? "1" : "0"); // ✅ Laravel reconoce 1 como true y 0 como false
+
+    // ✅ Enviar `tags` solo como JSON
+    if (tags.length > 0) {
+      formData.append("tags", JSON.stringify(tags));
+    }
+
+
+    if (imageUrl) formData.append("image_url", imageUrl);
+
+    // ✅ Agregar imágenes
+    imageFiles.forEach((image) => formData.append("images[]", image));
+
+    // ✅ Agregar videos si existen
+    if (videoFiles.length > 0) {
+      videoFiles.forEach((video) => {
+        if (video.type.startsWith("video/")) {
+          formData.append("videos[]", video);
+        }
+      });
+    }
+
+    // 🛠️ Depuración antes del POST
+    console.log("📤 Enviando proyecto con datos:", Object.fromEntries(formData.entries()));
 
     try {
       const createdProject = await axios.post(
         "http://127.0.0.1:8000/api/projects",
-        projectData,
-        { headers: { "Content-Type": "application/json" } }
+        formData,
+        { headers: { "Content-Type": "multipart/form-data" } }
       );
 
-      console.log("✅ Proyecto creado con ID:", createdProject.data.id);
       setProjectId(createdProject.data.id);
 
       if (imageFiles.length) {
@@ -106,14 +126,14 @@ export default function AddProject({ onProjectAdded }: AddProjectProps) {
       setTechStack("");
       setGithubLink("");
       setLiveDemo("");
-      setVideoUrl(""); // ✅ Resetear correctamente el campo de video
       setClientName("");
       setProjectType("");
       setDuration("");
       setFeatured(false);
-      setTags([]); // ✅ Resetear como array vacío
+      setTags([]); // 🛠️ Asegurar que se reinician los tags
       setImageUrl("");
       setImageFiles([]);
+      setVideoFiles([]);
 
       onProjectAdded();
     } catch (error) {
@@ -127,6 +147,9 @@ export default function AddProject({ onProjectAdded }: AddProjectProps) {
       setLoading(false);
     }
   };
+
+
+
 
 
 
@@ -303,6 +326,18 @@ export default function AddProject({ onProjectAdded }: AddProjectProps) {
             onChange={(e) => setImageFiles(Array.from(e.target.files || []))}
           />
         </label>
+
+        <label>
+          <span className="text-gray-700 dark:text-white">Subir Video (MP4, MOV, AVI, WMV - Máx. 50MB)</span>
+          <input
+            type="file"
+            accept="video/mp4,video/mov,video/avi,video/wmv"
+            className="w-full p-2 border rounded-md dark:bg-gray-700 dark:text-white"
+            multiple
+            onChange={(e) => setVideoFiles(Array.from(e.target.files || []))}
+          />
+        </label>
+
 
         <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded-md font-medium shadow-md hover:scale-105 transition-all duration-300" disabled={loading}>
           {loading ? "Guardando..." : "Añadir Proyecto"}
