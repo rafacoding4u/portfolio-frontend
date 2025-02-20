@@ -84,11 +84,12 @@ export default function AddProject({ onProjectAdded }: AddProjectProps) {
     // ✅ Corregido `featured`
     formData.append("featured", featured ? "1" : "0"); // ✅ Laravel reconoce 1 como true y 0 como false
 
-    // ✅ Enviar `tags` solo como JSON
+    // ✅ Agregar tags correctamente
     if (tags.length > 0) {
-      formData.append("tags", JSON.stringify(tags));
-    }
-
+      tags.forEach((tag) => {
+        formData.append("tags", tag); // ✅ Correcto
+      });
+    } // ✅ Cerrar bien el bloque del `if`
 
     if (imageUrl) formData.append("image_url", imageUrl);
 
@@ -106,6 +107,10 @@ export default function AddProject({ onProjectAdded }: AddProjectProps) {
 
     // 🛠️ Depuración antes del POST
     console.log("📤 Enviando proyecto con datos:", Object.fromEntries(formData.entries()));
+    console.log("🔍 Tags antes de enviar:", tags);
+    console.log("📤 Tags en FormData:", formData.getAll("tags"));
+
+
 
     try {
       const createdProject = await axios.post(

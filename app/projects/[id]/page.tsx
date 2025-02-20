@@ -46,23 +46,32 @@ export default function ProjectDetail() {
   const [showVideo, setShowVideo] = useState(false);
   const router = useRouter();
   const params = useParams();
+  const projectId = Array.isArray(params.id) ? params.id[0] : params.id;
+
 
   // 🔥 Detectar modo oscuro del sistema
   useEffect(() => {
-    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-    setDarkMode(prefersDark);
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+    const handleChange = () => setDarkMode(mediaQuery.matches);
+
+    // Agregar listener para cambios en el sistema
+    mediaQuery.addEventListener("change", handleChange);
+
+    // Limpieza del efecto
+    return () => mediaQuery.removeEventListener("change", handleChange);
   }, []);
 
+
   useEffect(() => {
-    if (!params.id) {
-      console.error("⚠️ Error: params.id es undefined");
+    if (!projectId) {
+      console.error("⚠️ Error: projectId es undefined");
       return;
     }
 
     async function fetchProject() {
       try {
         const response = await axios.get(
-          `${process.env.NEXT_PUBLIC_API_URL}/api/projects/${params.id}`
+          `${process.env.NEXT_PUBLIC_API_URL}/api/projects/${projectId}`
         );
         setProject(response.data);
       } catch (error) {
@@ -72,7 +81,8 @@ export default function ProjectDetail() {
     }
 
     fetchProject();
-  }, [params.id, router]);
+  }, [projectId, router]);
+
 
 
   if (!project) {
@@ -85,7 +95,9 @@ export default function ProjectDetail() {
     );
   }
   // ✅ Función para convertir URL de YouTube a formato embebido
-  const formatYouTubeUrl = (url: string): string | null => {
+  const formatYouTubeUrl = (url?: string): string | null => {
+    if (!url || typeof url !== "string") return null; // ✅ Validación extra
+
     try {
       const parsedUrl = new URL(url);
       if (parsedUrl.hostname.includes("youtube.com")) {
@@ -96,8 +108,9 @@ export default function ProjectDetail() {
     } catch (error) {
       console.error("❌ Error al formatear la URL de YouTube:", error);
     }
-    return null; // Si no es un enlace válido de YouTube, devolvemos null
+    return null;
   };
+
 
   return (
     <motion.div
